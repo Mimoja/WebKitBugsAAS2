@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/Masterminds/vcs"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -25,7 +26,7 @@ func connectToSVN(CommitMessages chan CommitEntry){
 		return
 	}
 
-	err = repo.Get()
+	//err = repo.Get()
 	if err != nil {
 		logrus.Errorf("Unable to checkout SVN repo. Err was %s", err)
 		return
@@ -36,7 +37,7 @@ func connectToSVN(CommitMessages chan CommitEntry){
 
 	for {
 		logrus.Info("Updating SVN repo")
-		err = repo.Update()
+		//err = repo.Update()
 		if err != nil {
 			logrus.Errorf("Unable update SVN repo. Err was %s", err)
 			return
@@ -45,7 +46,7 @@ func connectToSVN(CommitMessages chan CommitEntry){
 		logrus.Info("Getting SVN latest version")
 		v, err := repo.Version()
 		if err != nil {
-			logrus.Errorf("Unable to get current SVN version. Err was %s", err)
+			logrus.Warnf("Unable to get current SVN version. Err was %s", err)
 			return
 		}
 
@@ -57,15 +58,20 @@ func connectToSVN(CommitMessages chan CommitEntry){
 		logrus.Info("Latest version is: ", latestVersion)
 
 		for ; lastKnownVersion <= latestVersion; lastKnownVersion++ {
-			lastCommit := strconv.Itoa(lastKnownVersion)
+			lastCommit := fmt.Sprint(lastKnownVersion)
 
 			logrus.Info("Getting CommitInfo for ", lastCommit)
 			ci, err := repo.CommitInfo(lastCommit)
+
 			if err != nil {
+				if err.Error() == "Revision unavailable" {
+					logrus.Info("Skipping non existing Revision: ", lastCommit)
+					continue
+				}
 				logrus.Errorf("Unable to svn commit message. Err was %s", err)
 				continue
 			}
-			logrus.Info("Commit message is: ", ci.Message)
+
 			CommitMessages <- CommitEntry{
 				Revision: ci.Commit,
 				CommitInfo: CommitInfo{

@@ -16,7 +16,9 @@ const UNKNOWN = BugVisibility("unknown")
 const IGNORED = BugVisibility("ignored")
 
 const COMMIT_INDEX = "commits"
+const BUG_INDEX = "bugs"
 const COMMIT_TYPE = "commit"
+const BUG_TYPE = "bug"
 
 
 type CommitEntry struct {

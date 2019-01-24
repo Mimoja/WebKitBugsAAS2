@@ -1,2 +1,2 @@
 # WebKitBugsAAS2
-Rewrite of Webkit.abfackeln.jetzt in go
+Rewrite of WebKit.abfackeln.jetzt in go
