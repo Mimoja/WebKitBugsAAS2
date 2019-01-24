@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/xml"
 	"fmt"
 	"github.com/Masterminds/vcs"
 	"github.com/sirupsen/logrus"
@@ -9,7 +10,7 @@ import (
 	"time"
 )
 
-func connectToSVN(CommitMessages chan CommitEntry){
+func connectToSVN(CommitMessages chan CommitEntry) {
 
 	remote := "https://svn.webkit.org/repository/webkit/trunk"
 	local := "/home/mimoja/webkit-svn"
@@ -21,7 +22,7 @@ func connectToSVN(CommitMessages chan CommitEntry){
 	logrus.Info("Creating SVN repo")
 	repo, err := vcs.NewSvnRepo(remote, local)
 
-	if(err != nil){
+	if err != nil {
 		logrus.Error("Could not connevt to repo: ", err)
 		return
 	}
@@ -32,8 +33,7 @@ func connectToSVN(CommitMessages chan CommitEntry){
 		return
 	}
 
-
-	lastKnownVersion := 1;
+	lastKnownVersion := 1
 
 	for {
 		logrus.Info("Updating SVN repo")
@@ -50,39 +50,82 @@ func connectToSVN(CommitMessages chan CommitEntry){
 			return
 		}
 
-		latestVersion, err := strconv.Atoi(v);
+		latestVersion, err := strconv.Atoi(v)
 		if err != nil {
 			logrus.Errorf("Unable to convert SVN version. Err was %s", err)
 			return
 		}
 		logrus.Info("Latest version is: ", latestVersion)
 
-		for ; lastKnownVersion <= latestVersion; lastKnownVersion++ {
-			lastCommit := fmt.Sprint(lastKnownVersion)
+		paging := 5000
+		for lastKnownVersion < latestVersion {
 
-			logrus.Info("Getting CommitInfo for ", lastCommit)
-			ci, err := repo.CommitInfo(lastCommit)
+			if latestVersion-lastKnownVersion < paging {
+				paging = latestVersion - lastKnownVersion
+			}
 
+			logrus.Infof("Getting CommitInfo for %d:%d", lastKnownVersion, lastKnownVersion+paging)
+			cis, err := getCommitInfos(repo, lastKnownVersion, lastKnownVersion+paging)
 			if err != nil {
 				if err.Error() == "Revision unavailable" {
-					logrus.Info("Skipping non existing Revision: ", lastCommit)
+					logrus.Error("Revision unavailable.Help!")
 					continue
 				}
-				logrus.Errorf("Unable to svn commit message. Err was %s", err)
+				logrus.Errorf("Unable to get svn commit message. Err was: %s", err)
 				continue
 			}
 
-			CommitMessages <- CommitEntry{
-				Revision: ci.Commit,
-				CommitInfo: CommitInfo{
-					Author:  ci.Author,
-					Date:    ci.Date,
-					Message: ci.Message,
-				},
+			for _, ci := range cis {
+				CommitMessages <- ci
 			}
-
+			lastKnownVersion += paging
 		}
 		timer := time.NewTimer(10 * time.Minute)
 		<-timer.C
 	}
+}
+
+func getCommitInfos(s *vcs.SvnRepo, from int, to int) ([]CommitEntry, error) {
+
+	out, err := s.RunFromDir("svn", "log", "-r", fmt.Sprintf("%d:%d", from, to), "--xml")
+	if err != nil {
+		return nil, fmt.Errorf("Unable to retrieve commit information: %v", err)
+	}
+
+	type Logentry struct {
+		Author string `xml:"author"`
+		Date   string `xml:"date"`
+		Msg    string `xml:"msg"`
+	}
+	type Log struct {
+		XMLName xml.Name   `xml:"log"`
+		Logs    []Logentry `xml:"logentry"`
+	}
+
+	logs := &Log{}
+	err = xml.Unmarshal(out, &logs)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to unmarshall commit information %v", err)
+	}
+	if len(logs.Logs) == 0 {
+		return nil, fmt.Errorf("Revision unavailable")
+	}
+	var cis []CommitEntry
+	for i, log := range logs.Logs {
+		ci := CommitEntry{
+			Revision: strconv.Itoa(from + i),
+			CommitInfo: CommitInfo{
+				Author:  log.Author,
+				Message: log.Msg,
+			},
+		}
+		if len(log.Date) > 0 {
+			ci.CommitInfo.Date, err = time.Parse(time.RFC3339Nano, log.Date)
+			if err != nil {
+				return nil, fmt.Errorf("Unable to retrieve commit information: %v", err)
+			}
+			cis = append(cis, ci)
+		}
+	}
+	return cis, nil
 }
