@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func connectToSVN(CommitMessages chan *vcs.CommitInfo){
+func connectToSVN(CommitMessages chan CommitEntry){
 
 	remote := "https://svn.webkit.org/repository/webkit/trunk"
 	local := "/home/mimoja/webkit-svn"
@@ -54,7 +54,7 @@ func connectToSVN(CommitMessages chan *vcs.CommitInfo){
 			logrus.Errorf("Unable to convert SVN version. Err was %s", err)
 			return
 		}
-		logrus.Info("Version is: ", latestVersion)
+		logrus.Info("Latest version is: ", latestVersion)
 
 		for ; lastKnownVersion <= latestVersion; lastKnownVersion++ {
 			lastCommit := strconv.Itoa(lastKnownVersion)
@@ -63,10 +63,18 @@ func connectToSVN(CommitMessages chan *vcs.CommitInfo){
 			ci, err := repo.CommitInfo(lastCommit)
 			if err != nil {
 				logrus.Errorf("Unable to svn commit message. Err was %s", err)
-				return
+				continue
 			}
 			logrus.Info("Commit message is: ", ci.Message)
-			CommitMessages <- ci
+			CommitMessages <- CommitEntry{
+				Revision: ci.Commit,
+				CommitInfo: CommitInfo{
+					Author:  ci.Author,
+					Date:    ci.Date,
+					Message: ci.Message,
+				},
+			}
+
 		}
 		timer := time.NewTimer(10 * time.Minute)
 		<-timer.C
