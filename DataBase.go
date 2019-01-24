@@ -38,18 +38,27 @@ type CommitInfo struct {
 	Message string
 }
 
-func DBConnect() (*elastic.Client){
-	client, err := elastic.NewClient()
-	if err != nil {
-		logrus.WithError(err).Panic("Could not create elastic client")
-	}
+func DBConnect() (client *elastic.Client){
+	success := false
+	for ; !success; {
+		client, err := elastic.NewClient()
+		if err != nil {
+			logrus.Error("Could not connect to elastic. Reconnecting in 10s")
+			time.Sleep(10*time.Second);
+			continue
+			}
 
-	// Getting the ES version number is quite common, so there's a shortcut
-	esversion, err := client.ElasticsearchVersion("http://127.0.0.1:9200")
-	if err != nil {
-		logrus.WithError(err).Panic("Could not connect to elastic")
+		// Getting the ES version number is quite common, so there's a shortcut
+		esversion, err := client.ElasticsearchVersion("http://127.0.0.1:9200")
+		if err != nil {
+			logrus.Error("Could not connect to elastic. Reconnecting in 10s")
+			time.Sleep(10*time.Second);
+			continue
+		}
+
+		logrus.Infof("Elasticsearch version %s", esversion)
+		success = true
 	}
-	logrus.Infof("Elasticsearch version %s", esversion)
 	return client
 }
 

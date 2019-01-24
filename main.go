@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/sirupsen/logrus"
 	"net/http"
-	"time"
 )
 
 func searchHandler(w http.ResponseWriter, r *http.Request) {
@@ -28,15 +27,11 @@ func main(){
 
 	logrus.Info("Starting Bug Rater")
 	go rateBugs(Bugs, DBClient)
-	
+
 
 	logrus.Info("Starting Webserver")
 	http.HandleFunc("/", searchHandler)
 	go http.ListenAndServe(":8080", nil)
 
-	for {
-		logrus.Info("Unhandled commits: %d Unhandled Bugs: %d", len(CommitMessages), len(Bugs))
-		time.Sleep(1*time.Second)
-	}
-
+	select {}
 }
