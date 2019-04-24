@@ -41,17 +41,17 @@ type CommitInfo struct {
 func DBConnect() (client *elastic.Client){
 	success := false
 	for ; !success; {
-		client, err := elastic.NewClient()
+		client, err := elastic.NewSimpleClient()
 		if err != nil {
-			logrus.Error("Could not connect to elastic. Reconnecting in 10s")
+			logrus.Error("Could not create elastic client:", err)
 			time.Sleep(10*time.Second);
 			continue
 			}
 
 		// Getting the ES version number is quite common, so there's a shortcut
-		esversion, err := client.ElasticsearchVersion("http://127.0.0.1:9200")
+		esversion, err := client.ElasticsearchVersion("http://elasticsearch:9200")
 		if err != nil {
-			logrus.Error("Could not connect to elastic. Reconnecting in 10s")
+			logrus.Error("Could not connect to elastic. Reconnecting in 10s: ", err)
 			time.Sleep(10*time.Second);
 			continue
 		}

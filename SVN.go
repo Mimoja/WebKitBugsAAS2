@@ -13,7 +13,7 @@ import (
 func connectToSVN(CommitMessages chan CommitEntry) {
 
 	remote := "https://svn.webkit.org/repository/webkit/trunk"
-	local := "/home/mimoja/webkit-svn"
+	local := "./webkit-svn"
 
 	if _, err := os.Stat(local); os.IsNotExist(err) {
 		os.Mkdir(local, os.ModePerm)
@@ -27,9 +27,9 @@ func connectToSVN(CommitMessages chan CommitEntry) {
 		return
 	}
 
-	//err = repo.Get()
+	err = repo.Get()
 	if err != nil {
-		logrus.Errorf("Unable to checkout SVN repo. Err was %s", err)
+		logrus.Errorf("Unable to checkout SVN repo. Err was %v", err)
 		return
 	}
 
@@ -37,7 +37,7 @@ func connectToSVN(CommitMessages chan CommitEntry) {
 
 	for {
 		logrus.Info("Updating SVN repo")
-		//err = repo.Update()
+		err = repo.Update()
 		if err != nil {
 			logrus.Errorf("Unable update SVN repo. Err was %s", err)
 			return

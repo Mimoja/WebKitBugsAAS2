@@ -3,18 +3,18 @@ services:
   webkitabfackeln:
     container_name: webkit_abfackeln
     build: .
+    volumes:
+      - '../webkit-svn:/app/webkit-svn'
     ports:
       - "127.0.0.1:8080:8080"
-    volumes:
-      - '/home/mimoja/webkit-svn:/home/mimoja/webkit-svn'
     restart: unless-stopped
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.5.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.0.0
     container_name: webkit_elasticsearch
     ports: ['127.0.0.1:9200:9200']
     volumes:
-      - './elastic:/usr/share/elasticsearch/data'
+      - '../elastic:/usr/share/elasticsearch/data'
     healthcheck:
       test: curl --cacert /usr/share/elasticsearch/config/certs/ca/ca.crt -s https://localhost:9200 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
       interval: 30s
@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:6.5.1
+    image: docker.elastic.co/kibana/kibana:7.0.0
     container_name: webkit_kibana
     environment:
       - ELASTICSEARCH_USERNAME=kibana
