@@ -7,7 +7,6 @@ import (
 	"time"
 )
 
-
 type BugVisibility string
 
 const PUBLIC = BugVisibility("public")
@@ -20,39 +19,41 @@ const BUG_INDEX = "bugs"
 const COMMIT_TYPE = "commit"
 const BUG_TYPE = "bug"
 
-
 type CommitEntry struct {
-	Revision string
+	Revision   int
 	CommitInfo CommitInfo
-	Bugs []string
+	Bugs       []string
 }
 
-type BugEntry struct{
-	ID string
+type BugEntry struct {
+	ID         string
 	Visibility BugVisibility
 }
 
 type CommitInfo struct {
-	Author string
-	Date time.Time
-	Message string
+	CommitID string
+	Author   string
+	Date     string
+	Message  string
 }
 
-func DBConnect() (client *elastic.Client){
+func DBConnect() *elastic.Client {
 	success := false
-	for ; !success; {
-		client, err := elastic.NewSimpleClient()
+	var client *elastic.Client
+	var err error
+	for !success {
+		client, err = elastic.NewSimpleClient()
 		if err != nil {
 			logrus.Error("Could not create elastic client:", err)
-			time.Sleep(10*time.Second);
+			time.Sleep(10 * time.Second)
 			continue
-			}
+		}
 
 		// Getting the ES version number is quite common, so there's a shortcut
-		esversion, err := client.ElasticsearchVersion("http://elasticsearch:9200")
+		esversion, err := client.ElasticsearchVersion("http://localhost:9200")
 		if err != nil {
 			logrus.Error("Could not connect to elastic. Reconnecting in 10s: ", err)
-			time.Sleep(10*time.Second);
+			time.Sleep(10 * time.Second)
 			continue
 		}
 
@@ -62,8 +63,7 @@ func DBConnect() (client *elastic.Client){
 	return client
 }
 
-
-func updateElement(client *elastic.Client,index string, typeString string,  id string, field string, entry interface{},) {
+func updateElement(client *elastic.Client, index string, typeString string, id string, field string, entry interface{}) {
 	_, err := client.Update().
 		Index(index).
 		Type(typeString).
@@ -84,7 +84,6 @@ func StoreElement(client *elastic.Client, index string, typeString string, entry
 
 }
 
-
 func store(is *elastic.IndexService, index string, typeString string, id string) error {
 	is = is.Index(index).Type(typeString).Id(id)
 
@@ -98,7 +97,7 @@ func store(is *elastic.IndexService, index string, typeString string, id string)
 	return nil
 }
 
-func Exists(client *elastic.Client,index string, id string) (bool, error, *elastic.GetResult) {
+func Exists(client *elastic.Client, index string, id string) (bool, error, *elastic.GetResult) {
 	get, err := client.Get().
 		Index(index).
 		Id(id).
@@ -121,5 +120,3 @@ func Exists(client *elastic.Client,index string, id string) (bool, error, *elast
 	}
 	return true, nil, get
 }
-
-

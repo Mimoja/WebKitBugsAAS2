@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Bug</title>
+	<style>
+	body {
+		text-align: center;
+		font-family: "Bitstream Vera Sans Mono", Courier, monospace;
+	}
+	#wrapper {
+		display: inline-block;
+		margin-top: 1em;
+		min-width: 800px;
+		width: 80%;
+		text-align: left;
+	}
+	h2 {
+		border: 1px solid #d8d8d8;
+		border-bottom: 0;
+		color: #555;
+		font: 14px sans-serif;
+		padding: 10px 6px;
+		text-shadow: 0 1px 0 white;
+		margin: 0;
+	}
+	.diff {
+		border: 1px solid #d8d8d8;
+	}
+	.diff.div {
+		padding: 0.5em;
+	}
+	.file-diff {
+		border: 1px solid #d8d8d8;
+		margin-bottom: 1em;
+		overflow: auto;
+		padding: 0.5em 0;
+	}
+	.file-diff > div {
+		width: 100%:
+	}
+	pre {
+		margin: 0;
+		font-size: 12px;
+		line-height: 1.4em;
+		text-indent: 0.5em;
+	}
+	.commit {
+		margin-top: 0.4em;
+		font-size: 16px;
+		line-height: 1.0em;
+		text-indent: 1.0em;
+	}
+	.navigation-button {
+	padding:  14px;   
+	margin-top: 8px;   
+	padding-bottom: 8px;   
+	position: relative;
+	display: inline-block;
+	cursor: pointer;
+	outline: none;
+	border: none; 
+	background-color: #eeeeee;
+	text-shadow: #ffffff 0 1px 0; 
+	text-align: center;  
+	text-decoration: none;
+	}
+	.file {
+		background-color: #aaa;
+	}
+	.red {
+		background-color: #fdd;
+	}
+	.green {
+		background-color: #dfd;
+	}
+	.blue {
+		color: #a0f;
+	}
+	</style>
+</head>
+<body>
+<div id="wrapper">
+{{bug}}
+</div>
+</body>
+</html>
+

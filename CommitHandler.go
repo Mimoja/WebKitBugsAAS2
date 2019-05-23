@@ -3,22 +3,25 @@ package main
 import (
 	"github.com/olivere/elastic"
 	"github.com/sirupsen/logrus"
+	"math"
 	"net/url"
 	"regexp"
+	"strconv"
 )
 
 func storeCommits(CommitMessages chan CommitEntry, BugChannel chan string, dbClient *elastic.Client) {
 	for {
 		ci := <-CommitMessages
-		logrus.Infof("Commit %s message is: %s", ci.Revision, ci.CommitInfo.Message)
-		exists, err, _ := Exists(dbClient, COMMIT_INDEX, ci.Revision)
+		messageLength := float64(len(ci.CommitInfo.Message))
+		logrus.Infof("Commit %d message is: %s", ci.Revision, ci.CommitInfo.Message[:int(math.Min(messageLength, 30))]+"...")
+		exists, err, _ := Exists(dbClient, COMMIT_INDEX, strconv.Itoa(ci.Revision))
 		if err != nil {
 			logrus.Info("Could not query commit %s from elastic: ", err, ci.Revision)
 			continue
 		}
 		if exists {
-			logrus.Infof("Commit %s already in DB", ci.Revision)
-			//continue
+			logrus.Infof("Commit %d already in DB", ci.Revision)
+			continue
 		} else {
 			logrus.Info("Unknown Commit, storing in DB")
 		}
@@ -30,12 +33,12 @@ func storeCommits(CommitMessages chan CommitEntry, BugChannel chan string, dbCli
 		for _, bugURL := range reg.FindAllString(ci.CommitInfo.Message, -1) {
 			logrus.Info("Found Bug URL: ", bugURL)
 			parsedURL, _ := url.Parse(bugURL)
-			bugID:= parsedURL.Query().Get("id")
+			bugID := parsedURL.Query().Get("id")
 			BugChannel <- bugID
 			ci.Bugs = append(ci.Bugs, bugID)
 		}
 
-		err = StoreElement(dbClient, COMMIT_INDEX, COMMIT_TYPE, ci, ci.Revision)
+		err = StoreElement(dbClient, COMMIT_INDEX, COMMIT_TYPE, ci, strconv.Itoa(ci.Revision))
 		if err != nil {
 			logrus.Error("Could not store commit to elastic: ", err)
 			CommitMessages <- ci
